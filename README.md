@@ -2,7 +2,7 @@
   <img src="https://img.icons8.com/color/96/000000/police-badge.png" alt="urlpolice logo" width="96">
 </p>
 
-<h1 align="center">urlpolice</h1>
+<h1 align="center">URLpolice</h1>
 
 <p align="center">
   <strong>🚨 Stop Bad URLs Before They Stop You.</strong><br><br>
@@ -12,12 +12,11 @@
 <br>
 
 <p align="center">
-  <a href="https://pypi.org/project/urlpolice/"><img src="https://img.shields.io/pypi/v/urlpolice?style=for-the-badge&logo=pypi&logoColor=white&color=3775A9" alt="PyPI version"></a>&nbsp;
-  <a href="https://pypi.org/project/urlpolice/"><img src="https://img.shields.io/pypi/pyversions/urlpolice?style=for-the-badge&logo=python&logoColor=white" alt="Python versions"></a>&nbsp;
-  <a href="https://github.com/Nikhil-Singh-2503/urlpolice/actions"><img src="https://img.shields.io/github/actions/workflow/status/Nikhil-Singh-2503/urlpolice/ci.yml?style=for-the-badge&logo=githubactions&logoColor=white&label=tests" alt="CI status"></a>&nbsp;
-  <a href="https://codecov.io/gh/urlpolice/urlpolice"><img src="https://img.shields.io/codecov/c/github/Nikhil-Singh-2503/urlpolice?style=for-the-badge&logo=codecov&logoColor=white&label=coverage" alt="Coverage"></a>&nbsp;
-  <a href="https://github.com/Nikhil-Singh-2503/urlpolice/blob/main/LICENSE"><img src="https://img.shields.io/github/license/Nikhil-Singh-2503/urlpolice?style=for-the-badge&color=green" alt="License"></a>&nbsp;
-  <a href="https://pypi.org/project/urlpolice/"><img src="https://img.shields.io/pypi/dm/urlpolice?style=for-the-badge&logo=pypi&logoColor=white&color=orange&label=downloads" alt="Downloads"></a>
+  <a href="https://pypi.org/project/urlpolice/"><img src="https://img.shields.io/pypi/v/URLpolice?style=for-the-badge&logo=pypi&logoColor=white&color=3775A9" alt="PyPI version"></a>&nbsp;
+  <a href="https://pypi.org/project/urlpolice/"><img src="https://img.shields.io/pypi/pyversions/URLpolice?style=for-the-badge&logo=python&logoColor=white" alt="Python versions"></a>&nbsp;
+  <a href="https://github.com/Nikhil-Singh-2503/URLpolice/actions"><img src="https://img.shields.io/github/actions/workflow/status/Nikhil-Singh-2503/URLpolice/publish.yml?style=for-the-badge&logo=githubactions&logoColor=white&label=tests" alt="CI status"></a>&nbsp;
+  <a href="https://codecov.io/gh/urlpolice/urlpolice"><img src="https://img.shields.io/codecov/c/github/Nikhil-Singh-2503/URLpolice?style=for-the-badge&logo=codecov&logoColor=white&label=coverage" alt="Coverage"></a>&nbsp;
+  <a href="https://github.com/Nikhil-Singh-2503/URLpolice/blob/master/LICENSE"><img src="https://img.shields.io/github/license/Nikhil-Singh-2503/URLpolice?style=for-the-badge&color=green" alt="License"></a>&nbsp;
 </p>
 
 <br>
