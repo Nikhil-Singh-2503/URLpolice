@@ -22,8 +22,11 @@ jobs:
       - name: Build package
         run: uv build
 
-      - name: Check dist
-        run: ls -la dist/
+      - name: Upload distributions
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
 
   publish:
     name: Publish to PyPI
