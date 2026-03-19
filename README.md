@@ -1,0 +1,552 @@
+<p align="center">
+  <img src="https://img.icons8.com/color/96/000000/police-badge.png" alt="urlpolice logo" width="96">
+</p>
+
+<h1 align="center">urlpolice</h1>
+
+<p align="center">
+  <strong>🚨 Stop Bad URLs Before They Stop You.</strong><br><br>
+  <em>The security-first Python library that stands guard between your application and the wild west of user-submitted URLs.<br>One import. One call. Sixteen battle-tested checks. Zero excuses for SSRF.</em>
+</p>
+
+<br>
+
+<p align="center">
+  <a href="https://pypi.org/project/urlpolice/"><img src="https://img.shields.io/pypi/v/urlpolice?style=for-the-badge&logo=pypi&logoColor=white&color=3775A9" alt="PyPI version"></a>&nbsp;
+  <a href="https://pypi.org/project/urlpolice/"><img src="https://img.shields.io/pypi/pyversions/urlpolice?style=for-the-badge&logo=python&logoColor=white" alt="Python versions"></a>&nbsp;
+  <a href="https://github.com/Nikhil-Singh-2503/urlpolice/actions"><img src="https://img.shields.io/github/actions/workflow/status/Nikhil-Singh-2503/urlpolice/ci.yml?style=for-the-badge&logo=githubactions&logoColor=white&label=tests" alt="CI status"></a>&nbsp;
+  <a href="https://codecov.io/gh/urlpolice/urlpolice"><img src="https://img.shields.io/codecov/c/github/Nikhil-Singh-2503/urlpolice?style=for-the-badge&logo=codecov&logoColor=white&label=coverage" alt="Coverage"></a>&nbsp;
+  <a href="https://github.com/Nikhil-Singh-2503/urlpolice/blob/main/LICENSE"><img src="https://img.shields.io/github/license/Nikhil-Singh-2503/urlpolice?style=for-the-badge&color=green" alt="License"></a>&nbsp;
+  <a href="https://pypi.org/project/urlpolice/"><img src="https://img.shields.io/pypi/dm/urlpolice?style=for-the-badge&logo=pypi&logoColor=white&color=orange&label=downloads" alt="Downloads"></a>
+</p>
+
+<br>
+
+<p align="center">
+  <a href="#-installation">Installation</a> •
+  <a href="#-quick-start">Quick Start</a> •
+  <a href="#-features">Features</a> •
+  <a href="#-why-urlpolice-over-alternatives">Why urlpolice?</a> •
+  <a href="#%EF%B8%8F-configuration">Configuration</a> •
+  <a href="#-presets">Presets</a> •
+  <a href="#-contributing">Contributing</a>
+</p>
+
+---
+
+## 💡 The Problem
+
+Every backend that accepts a URL is a loaded gun pointed at your infrastructure. AWS credentials stolen via `http://169.254.169.254`. Internal services exposed through `http://localhost:6379`. Data exfiltrated through DNS rebinding. Firewalls bypassed with octal-encoded IPs.
+
+Writing these checks yourself means tracking dozens of RFCs, encoding tricks, and an ever-growing list of CVEs. **Miss one, and you're the next breach headline.**
+
+## 💊 The Solution
+
+```python
+from urlpolice import URLPolice
+
+police = URLPolice()
+
+# ✅ Safe — passes all 16 checks
+result = police.validate("https://api.example.com/v2/users")
+assert result.is_valid
+
+# 🚫 Blocked — SSRF via cloud metadata
+result = police.validate("http://169.254.169.254/latest/meta-data/")
+assert not result.is_valid
+
+# 🚫 Blocked — encoded localhost bypass
+result = police.validate("http://0x7f000001/admin")
+assert not result.is_valid
+
+# 🚫 Blocked — path traversal
+result = police.validate("https://cdn.example.com/../../etc/passwd")
+assert not result.is_valid
+```
+
+**One import. One call. Sleep at night.**
+
+---
+
+## 📦 Installation
+
+### Using uv (recommended)
+
+```bash
+# Create a virtual environment and activate it
+uv venv
+source .venv/bin/activate        # macOS / Linux
+# .venv\Scripts\activate         # Windows
+
+# Install urlpolice
+uv add urlpolice
+
+# With optional DNS resolution support
+uv add "urlpolice[dns]"
+```
+
+### Using pip
+
+```bash
+# Create a virtual environment and activate it
+python -m venv .venv
+source .venv/bin/activate        # macOS / Linux
+# .venv\Scripts\activate         # Windows
+
+# Install urlpolice
+pip install urlpolice
+
+# With optional DNS resolution support
+pip install "urlpolice[dns]"
+```
+
+### Development Setup
+
+```bash
+# Clone the repo and install in editable mode with dev tools
+git clone https://github.com/urlpolice/urlpolice.git
+cd urlpolice
+
+# With uv
+uv venv && source .venv/bin/activate
+uv sync
+
+# Or with pip
+python -m venv .venv && source .venv/bin/activate
+pip install -e ".[dev]"
+```
+
+> **Requires:** Python 3.10+
+
+---
+
+## 🚀 Quick Start
+
+```python
+from urlpolice import URLPolice
+
+police = URLPolice()
+result = police.validate("https://example.com/page")
+
+if result.is_valid:
+    print("✅ Safe URL:", result.url)
+else:
+    for error in result.errors:
+        print("🚫 Blocked:", error)
+
+for warning in result.warnings:
+    print("⚠️ Warning:", warning)
+```
+
+The `ValidationResult` gives you structured, actionable output:
+
+| Attribute | Type | Description |
+|:---|:---|:---|
+| `is_valid` | `bool` | Whether the URL passed all checks |
+| `url` | `str \| None` | Normalized URL (only set when valid) |
+| `errors` | `tuple[str, ...]` | All error messages |
+| `warnings` | `tuple[str, ...]` | Non-blocking warnings |
+| `metadata` | `dict` | Contextual info (e.g. `{"original_url": "..."}`) |
+
+> 💡 **Pro tip:** `ValidationResult` is truthy/falsy — use `if result:` directly in conditionals.
+
+---
+
+## 🛡️ Features
+
+urlpolice runs **12 specialized security modules** covering **16+ attack vectors** in a carefully ordered pipeline:
+
+| | Category | What It Catches |
+|:---|:---|:---|
+| 🔒 | **SSRF Protection** | Private IPs, loopback, link-local, cloud metadata (AWS, GCP, Azure, Alibaba, Oracle), encoded IP bypasses (hex, octal, decimal, IPv4-mapped IPv6) |
+| 🛑 | **XSS Detection** | `javascript:`, `data:`, `vbscript:` URI schemes, `<script>` injection in fragments and paths |
+| 📂 | **Path Traversal** | `../` sequences, percent-encoded variants (`%2e%2e%2f`), double-encoded (`%252e`), overlong UTF-8 (`%c0%af`) |
+| 🌐 | **DNS Rebinding** | Resolves hostnames at validation time, checks **every** resolved IP against private ranges |
+| ↩️ | **Open Redirect** | Scans 19 common redirect parameter names (`url=`, `next=`, `goto=`, `callback=`, etc.) |
+| 🎭 | **Homograph Attacks** | Detects Cyrillic/Greek look-alike characters disguised as Latin (`аpple.com` → `apple.com`) |
+| 🔑 | **Credential Leakage** | Rejects embedded `user:pass@` in URLs, detects UNC path (`\\server\share`) attempts |
+| 💉 | **Injection** | Null-byte (`%00`) and CRLF (`%0d%0a`) injection — hard fail, early exit |
+| 🔤 | **Encoding Abuse** | Double-encoding, triple-encoding, overlong UTF-8 percent sequences |
+| 🔗 | **Scheme Allowlist** | Configurable; blocks 22 dangerous schemes (`file://`, `gopher://`, `dict://`, etc.) |
+| 🚪 | **Port Control** | Optional port allowlist, warnings for dangerous ports (Redis 6379, MySQL 3306, SSH 22, ...) |
+| 📋 | **Domain Lists** | Per-instance allow/blocklists, DNS label length enforcement (RFC 1035), URL length cap |
+
+### ✨ And More
+
+| | Capability | Description |
+|:---|:---|:---|
+| 📦 | **Batch Validation** | `validate_batch()` for processing URL lists in a single call |
+| ⚙️ | **4 Built-in Presets** | `strict`, `permissive`, `webhook`, `user_content` |
+| 📄 | **File-Based Config** | Load settings from TOML or JSON — no code changes needed |
+| 🧩 | **Modular Checks** | Import and run any check module individually |
+| 🎚️ | **Selective Disabling** | Skip checks you don't need via `disabled_checks` |
+| 🧵 | **Thread-Safe DNS Cache** | TTL-based caching for high-throughput validation |
+| 📎 | **Minimal Dependencies** | Only `idna` (pure Python); DNS uses stdlib `socket` |
+| 🧊 | **Immutable Config** | Frozen dataclasses — safe to share across threads |
+
+---
+
+## 🏆 Why urlpolice Over Alternatives?
+
+There are other URL validation tools in the Python ecosystem. Here's why urlpolice exists and where it fits:
+
+| | Feature | **urlpolice** | **validators** | **Pydantic `HttpUrl`** | **ssrf-protect** | **SafeURL** / **Advocate** |
+|:---|:---|:---:|:---:|:---:|:---:|:---:|
+| 🔒 | SSRF (private IP blocking) | ✅ | ⚠️ `public=True` | ❌ | ✅ | ✅ |
+| ☁️ | Cloud metadata blocking | ✅ 5 providers | ❌ | ❌ | ❌ | ❌ |
+| 🧮 | Encoded IP detection (hex/octal/decimal) | ✅ | ❌ | ❌ | ❌ | ❌ |
+| 🔄 | DNS rebinding protection | ✅ | ❌ | ❌ | ❌ | ⚠️ Partial |
+| 🎭 | Homograph/IDN attack detection | ✅ | ❌ | ❌ | ❌ | ❌ |
+| 📂 | Path traversal detection | ✅ | ❌ | ❌ | ❌ | ❌ |
+| 🛑 | XSS scheme detection | ✅ | ❌ | ❌ | ❌ | ❌ |
+| 💉 | CRLF / null-byte injection | ✅ | ❌ | ❌ | ❌ | ❌ |
+| 🔤 | Double/overlong encoding bypass | ✅ | ❌ | ❌ | ❌ | ❌ |
+| ↩️ | Open redirect param scanning | ✅ | ❌ | ❌ | ❌ | ❌ |
+| 🔑 | Credential leakage detection | ✅ | ❌ | ❌ | ❌ | ❌ |
+| 🚪 | Port allowlist + dangerous port warnings | ✅ | ❌ | ❌ | ❌ | ❌ |
+| 📄 | TOML / JSON config files | ✅ | ❌ | ❌ | ❌ | ❌ |
+| ⚙️ | Ready-made presets | ✅ 4 presets | ❌ | ❌ | ❌ | ❌ |
+| 🧩 | Modular (use checks individually) | ✅ | ❌ | ❌ | ❌ | ❌ |
+| 🧵 | Thread-safe DNS cache | ✅ | ❌ | ❌ | ❌ | ❌ |
+| 🧪 | Test suite | 244 tests | ✅ | ✅ | Minimal | ⚠️ |
+| 🔧 | Actively maintained (2026) | ✅ | ✅ | ✅ | ⚠️ Low activity | ❌ Deprecated |
+
+### 🔍 The Key Differences
+
+> **`validators`** is excellent for format validation (`is this a valid URL?`), but it's not a security tool. Setting `public=True` blocks private IPs, but it won't catch encoded IPs, cloud metadata, path traversal, DNS rebinding, or any of the other 14 attack vectors urlpolice covers.
+
+> **Pydantic's `HttpUrl`** validates URL structure and integrates beautifully with FastAPI models — but it performs zero security checks. No SSRF protection, no injection detection, no scheme blocking beyond basic format.
+
+> **ssrf-protect** focuses narrowly on IP-based SSRF. It doesn't handle encoded IPs, DNS rebinding, path traversal, XSS, or encoding bypasses. It also has limited cloud metadata coverage.
+
+> **SafeURL** and **Advocate** are **deprecated and unmaintained**. SafeURL had a [known SSRF bypass via regex](https://security.snyk.io/vuln/SNYK-PYTHON-SAFEURLPYTHON-3251746) (CVE-2023-24622). Advocate hasn't been updated in years.
+
+**urlpolice is the only Python library that treats URL validation as a full security pipeline** — not a single check, but 16+ checks executed in the correct security-critical order, covering the encoding tricks and bypass techniques that appear in real-world CVEs.
+
+---
+
+## 🔥 Usage Examples
+
+### 🔗 Example 1 — Webhook Registration
+
+```python
+from urlpolice import URLPolice
+
+police = URLPolice.webhook()  # HTTPS only, no private IPs, DNS rebinding check
+
+def register_webhook(callback_url: str) -> dict:
+    result = police.validate(callback_url)
+    if not result:
+        return {"error": "Invalid callback URL", "details": result.errors}
+    save_webhook(result.url)  # safe to store and call later
+    return {"status": "registered"}
+```
+
+### 💬 Example 2 — User-Submitted Links
+
+```python
+from urlpolice import URLPolice
+
+police = URLPolice.user_content()
+
+urls = [
+    "https://example.com/article",           # ✅ valid
+    "javascript:alert(document.cookie)",      # 🚫 XSS
+    "http://127.0.0.1:6379/",                # 🚫 SSRF
+    "https://example.com/../../etc/passwd",   # 🚫 traversal
+]
+
+results = police.validate_batch(urls)
+safe_urls = [r.url for r in results if r.is_valid]
+```
+
+### 🔐 Example 3 — Strict API Gateway
+
+```python
+from urlpolice import URLPolice
+
+police = URLPolice(
+    allowed_schemes=frozenset({"https"}),
+    allowed_domains=frozenset({"api.partner1.com", "api.partner2.com"}),
+    perform_dns_resolution=True,
+)
+
+result = police.validate("https://api.partner1.com/v2/data")
+assert result.is_valid  # ✅ known partner
+
+result = police.validate("https://api.unknown.com/v2/data")
+assert not result.is_valid  # 🚫 not in allowlist
+```
+
+---
+
+## ⚙️ Configuration
+
+All options are set via `ValidatorConfig`. Pass them as keyword arguments or supply a config object:
+
+```python
+from urlpolice import URLPolice, ValidatorConfig
+
+# Keyword arguments
+police = URLPolice(allow_private_ips=True, allowed_schemes=frozenset({"https"}))
+
+# Or explicit config object
+config = ValidatorConfig(allow_private_ips=True, dns_timeout=3)
+police = URLPolice(config=config)
+```
+
+### 📋 Options Reference
+
+| Option | Type | Default | Description |
+|:---|:---|:---|:---|
+| `allowed_schemes` | `frozenset[str]` | `{"http", "https"}` | Permitted URL schemes |
+| `allowed_domains` | `frozenset[str] \| None` | `None` | Domain allowlist (None = all allowed) |
+| `blocked_domains` | `frozenset[str]` | `set()` | Domains that are always rejected |
+| `allowed_ports` | `frozenset[int] \| None` | `None` | Port allowlist (None = all standard ports) |
+| `allow_private_ips` | `bool` | `False` | Allow RFC 1918 / reserved addresses |
+| `allow_credentials` | `bool` | `False` | Allow `user:pass@` in the URL |
+| `allow_redirects` | `bool` | `False` | Allow open-redirect query parameters |
+| `max_url_length` | `int` | `2048` | Maximum URL length (DoS prevention) |
+| `max_label_length` | `int` | `63` | Maximum DNS label length (RFC 1035) |
+| `perform_dns_resolution` | `bool` | `True` | Resolve hostnames and validate resolved IPs |
+| `check_dns_rebinding` | `bool` | `True` | Warn on suspiciously many resolved addresses |
+| `dns_timeout` | `int` | `5` | DNS resolution timeout in seconds |
+| `disabled_checks` | `frozenset[str]` | `set()` | Check names to skip entirely |
+
+### 🎚️ Disabling Specific Checks
+
+```python
+police = URLPolice(disabled_checks=frozenset({"homograph", "redirect"}))
+```
+
+Available check names: `ssrf` · `scheme` · `credentials` · `redirect` · `xss` · `traversal` · `dns` · `injection` · `homograph` · `encoding` · `ip` · `port`
+
+---
+
+## 🎯 Presets
+
+Four battle-tested presets for the most common scenarios:
+
+```python
+from urlpolice import URLPolice
+
+police = URLPolice.strict()        # 🔒 Production APIs — maximum security
+police = URLPolice.permissive()    # 🛠️ Local development — everything allowed
+police = URLPolice.webhook()       # 🔗 Webhook callbacks — HTTPS + DNS check
+police = URLPolice.user_content()  # 💬 User-submitted links — balanced safety
+```
+
+| Preset | Schemes | Private IPs | Credentials | Redirects | DNS |
+|:---|:---|:---:|:---:|:---:|:---:|
+| 🔒 **strict** | HTTPS only | ❌ | ❌ | ❌ | ✅ |
+| 🛠️ **permissive** | HTTP + HTTPS | ✅ | ✅ | ✅ | ❌ |
+| 🔗 **webhook** | HTTPS only | ❌ | ❌ | ❌ | ✅ |
+| 💬 **user_content** | HTTP + HTTPS | ❌ | ❌ | ❌ | ✅ |
+
+---
+
+## 📄 File-Based Configuration
+
+Store settings in TOML or JSON — no code changes needed for different environments:
+
+<details>
+<summary><strong>📝 TOML Example</strong></summary>
+
+```toml
+# urlpolice.toml
+[urlpolice]
+allowed_schemes = ["https"]
+allowed_domains = ["api.example.com", "cdn.example.com"]
+blocked_domains = ["evil.com"]
+allowed_ports = [443, 8443]
+allow_private_ips = false
+allow_credentials = false
+allow_redirects = false
+max_url_length = 2048
+perform_dns_resolution = true
+check_dns_rebinding = true
+disabled_checks = ["homograph"]
+```
+</details>
+
+<details>
+<summary><strong>📝 JSON Example</strong></summary>
+
+```json
+{
+  "urlpolice": {
+    "allowed_schemes": ["https"],
+    "allowed_domains": ["api.example.com"],
+    "blocked_domains": ["evil.com"],
+    "allowed_ports": [443, 8443],
+    "allow_private_ips": false
+  }
+}
+```
+</details>
+
+```python
+from urlpolice import URLPolice
+
+police = URLPolice.from_config("urlpolice.toml")
+# or
+police = URLPolice.from_config("config/security.json")
+```
+
+> ⚠️ Unknown keys in the config file raise `ConfigurationError` immediately — no silent ignoring.
+
+---
+
+## 🧩 Individual Checks
+
+Need just one check? Import it directly:
+
+```python
+from urlpolice.checks.ssrf import check_ssrf
+from urlpolice.checks.traversal import check_traversal
+from urlpolice.config import ValidatorConfig
+
+config = ValidatorConfig()
+
+# 🔒 Check a hostname for SSRF
+result = check_ssrf("192.168.1.1", config)
+if result.errors:
+    print("SSRF risk:", result.errors)
+
+# 📂 Check a path for traversal
+result = check_traversal("/../../../etc/passwd")
+if result.errors:
+    print("Traversal attack:", result.errors)
+```
+
+**Available modules:** `ssrf` · `scheme` · `credentials` · `redirect` · `xss` · `traversal` · `dns` · `injection` · `homograph` · `encoding` · `ip` · `port`
+
+Each returns a `CheckResult(errors=list[str], warnings=list[str])`.
+
+---
+
+## 🧪 Testing
+
+urlpolice ships with **244 tests** covering every check module and integration scenario:
+
+```bash
+# Run the full suite
+pytest
+
+# Verbose output
+pytest -v
+
+# With coverage report
+pytest --cov=urlpolice --cov-report=term-missing
+```
+
+Development setup:
+
+```bash
+pip install -e ".[dev]"
+pytest
+```
+
+> `pyproject.toml` already configures `pythonpath = ["src"]` — no manual path hacking needed.
+
+---
+
+## ❓ FAQ & Troubleshooting
+
+<details>
+<summary><strong>🐢 DNS resolution is slow in tests</strong></summary>
+
+Disable it in your test fixtures:
+
+```python
+police = URLPolice(perform_dns_resolution=False)
+```
+</details>
+
+<details>
+<summary><strong>🚫 Legitimate URLs are being blocked</strong></summary>
+
+Inspect `result.errors` to see which check flagged it. Disable specific checks or use an allowlist:
+
+```python
+police = URLPolice(disabled_checks=frozenset({"redirect"}))
+# or
+police = URLPolice(allowed_domains=frozenset({"trusted.example.com"}))
+```
+</details>
+
+<details>
+<summary><strong>🏠 I need localhost access during development</strong></summary>
+
+```python
+police = URLPolice.permissive()
+# or
+police = URLPolice(allow_private_ips=True)
+```
+</details>
+
+<details>
+<summary><strong>🐍 What Python versions are supported?</strong></summary>
+
+Python 3.10+. TOML config uses `tomllib` (3.11+) with automatic `tomli` fallback for 3.10.
+</details>
+
+<details>
+<summary><strong>🔧 Can I serialize the config for debugging?</strong></summary>
+
+```python
+print(police._config.to_dict())  # plain dict, JSON-serializable
+```
+</details>
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome and appreciated! Here's how to get started:
+
+```bash
+# Clone the repository
+git clone https://github.com/urlpolice/urlpolice.git
+cd urlpolice
+
+# Install dev dependencies (uv)
+uv sync
+
+# Or with pip
+pip install -e ".[dev]"
+
+# Run tests
+pytest
+
+# Lint and format
+ruff check src/ tests/
+ruff format src/ tests/
+```
+
+**📐 Guidelines:**
+
+1. ✅ Every new check or feature must include tests
+2. 🎨 Follow existing style — Ruff-enforced, Google-style docstrings
+3. 🧱 One responsibility per module
+4. 🔒 Security checks err on the side of caution (block by default)
+5. 💬 Open an issue before starting large changes
+
+---
+
+## 📜 License
+
+MIT License — free for commercial and personal use. See [LICENSE](LICENSE) for details.
+
+---
+
+<p align="center">
+  <br>
+  <strong>Made with ❤️ by the <a href="https://github.com/urlpolice">urlpolice contributors</a></strong>
+  <br><br>
+  <sub>If urlpolice saved your app from an SSRF, give it a ⭐ — it helps others find it too.</sub>
+  <br><br>
+  <a href="https://github.com/urlpolice/urlpolice">🏠 Homepage</a> •
+  <a href="https://github.com/urlpolice/urlpolice/issues">🐛 Report Bug</a> •
+  <a href="https://github.com/urlpolice/urlpolice/issues">💡 Request Feature</a>
+</p>

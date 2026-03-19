@@ -1,0 +1,74 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "urlpolice"
+dynamic = ["version"]
+description = "Your URL Security Guardian - Protecting Against SSRF, XSS, and 16+ Attack Vectors"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+authors = [{ name = "Nikhil Singh" }]
+keywords = ["security", "url", "validation", "ssrf", "xss"]
+classifiers = [
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Utilities",
+    "Topic :: Security",
+    "Topic :: Internet :: WWW/HTTP",
+    "Typing :: Typed",
+]
+dependencies = [
+    "idna>=3.6",
+    "tomli>=2.0; python_version < '3.11'",
+]
+
+[project.optional-dependencies]
+dns = ["dnspython>=2.6"]
+dev = ["pytest>=8.0", "pytest-cov>=5.0", "ruff>=0.4"]
+
+[project.urls]
+Homepage = "https://github.com/Nikhil-Singh-2503/urlpolice"
+Repository = "https://github.com/Nikhil-Singh-2503/urlpolice"
+Issues = "https://github.com/Nikhil-Singh-2503/urlpolice/issues"
+
+[tool.hatch.version]
+path = "src/urlpolice/_version.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/urlpolice"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 99
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "RUF"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--strict-markers -v"
+pythonpath = ["src"]
+
+[tool.mypy]
+strict = true
+
+[tool.uv.sources]
+urlpolice = { workspace = true }
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "ruff>=0.4",
+]
